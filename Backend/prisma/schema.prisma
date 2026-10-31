@@ -66,6 +66,7 @@ model User {
   name                String
   role                UserRole  @default(CUSTOMER)
   isActive            Boolean   @default(true) @map("is_active")
+  refreshTokenVersion Int       @default(0) @map("refresh_token_version")
   lastLoginAt         DateTime? @map("last_login_at")
   resetTokenHash      String?   @map("reset_token_hash")
   resetTokenExpiresAt DateTime? @map("reset_token_expires_at")
@@ -219,7 +220,6 @@ model Subscription {
   subtotal            Decimal            @default(0) @db.Decimal(12, 2)
   taxTotal            Decimal            @default(0) @db.Decimal(12, 2) @map("tax_total")
   total               Decimal            @default(0) @db.Decimal(12, 2)
-  discountTotal       Decimal              @default(0) @map("discount_total") @db.Decimal(12, 2)
   notes               String?
   cancelledReason     String?            @map("cancelled_reason")
   pausedAt            DateTime?          @map("paused_at")
@@ -280,6 +280,7 @@ model Invoice {
   subtotal            Decimal       @default(0) @db.Decimal(12, 2)
   taxTotal            Decimal       @default(0) @map("tax_total") @db.Decimal(12, 2)
   total               Decimal       @default(0) @db.Decimal(12, 2)
+  discountTotal       Decimal       @default(0) @map("discount_total") @db.Decimal(12, 2)
   amountPaid          Decimal       @default(0) @map("amount_paid") @db.Decimal(12, 2)
   confirmedAt         DateTime?     @map("confirmed_at")
   paidAt              DateTime?     @map("paid_at")
@@ -296,6 +297,8 @@ model Invoice {
   updatedAt           DateTime      @updatedAt @map("updated_at")
 
   @@index([status, dueDate])
+  @@index([status, issueDate])
+  @@index([status, dueDate, customerId])
   @@index([customerId, status])
   @@index([subscriptionId, periodStart])
   @@map("invoices")
@@ -337,6 +340,7 @@ model Payment {
   createdAt   DateTime      @default(now()) @map("created_at")
 
   @@index([invoiceId, paidAt])
+  @@index([paidAt])
   @@map("payments")
 }
 

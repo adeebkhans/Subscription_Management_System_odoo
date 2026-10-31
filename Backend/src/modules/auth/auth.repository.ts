@@ -17,6 +17,14 @@ export function markLogin(id: string) {
   return database.user.update({ where: { id }, data: { lastLoginAt: new Date() } });
 }
 
+export function revokeRefreshTokens(id: string) {
+  return database.user.update({
+    where: { id },
+    data: { refreshTokenVersion: { increment: 1 } },
+    select: { refreshTokenVersion: true }
+  });
+}
+
 export function storeResetToken(id: string, resetTokenHash: string, resetTokenExpiresAt: Date) {
   return database.user.update({
     where: { id },
@@ -31,6 +39,11 @@ export function findUserByResetToken(resetTokenHash: string) {
 export function applyPasswordReset(id: string, passwordHash: string) {
   return database.user.update({
     where: { id },
-    data: { passwordHash, resetTokenHash: null, resetTokenExpiresAt: null }
+    data: {
+      passwordHash,
+      resetTokenHash: null,
+      resetTokenExpiresAt: null,
+      refreshTokenVersion: { increment: 1 }
+    }
   });
 }
