@@ -1,7 +1,17 @@
 import type { ReactNode } from 'react';
 import { cx } from '../../lib/cx';
-import { frequencyLabel, productTypeLabel, roleLabel } from '../../lib/format';
-import type { BillingFrequency, ProductType, Role } from '../../types';
+import {
+  frequencyLabel,
+  productTypeLabel,
+  roleLabel,
+  subscriptionStatusLabel
+} from '../../lib/format';
+import type {
+  BillingFrequency,
+  ProductType,
+  Role,
+  SubscriptionStatus
+} from '../../types';
 
 type BadgeTone = 'neutral' | 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'violet';
 
@@ -32,4 +42,21 @@ export function FrequencyBadge({ frequency }: { frequency: BillingFrequency }) {
 
 export function StatusBadge({ active }: { active: boolean }) {
   return <Badge tone={active ? 'success' : 'danger'}>{active ? 'Active' : 'Inactive'}</Badge>;
+}
+
+export function SubscriptionStatusBadge({ status }: { status: SubscriptionStatus }) {
+  const tone: BadgeTone =
+    status === 'ACTIVE'
+      ? 'success'
+      : status === 'PAUSED'
+        ? 'warning'
+        : status === 'CANCELLED'
+          ? 'danger'
+          : status === 'CONFIRMED'
+            ? 'primary'
+            : status === 'QUOTATION'
+              ? 'info'
+              : 'neutral';
+
+  return <Badge tone={tone}>{subscriptionStatusLabel(status)}</Badge>;
 }

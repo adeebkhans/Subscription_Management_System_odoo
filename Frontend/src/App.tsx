@@ -11,9 +11,13 @@ import { CatalogPage } from './pages/catalog/CatalogPage';
 import { DashboardPage } from './pages/dashboard/DashboardPage';
 import { ForbiddenPage } from './pages/ForbiddenPage';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { PaymentTermsPage } from './pages/payment-terms/PaymentTermsPage';
 import { PlansPage } from './pages/plans/PlansPage';
 import { ProductsPage } from './pages/products/ProductsPage';
+import { QuotationsPage } from './pages/quotations/QuotationsPage';
 import { StaffPage } from './pages/staff/StaffPage';
+import { SubscriptionDetailPage } from './pages/subscriptions/SubscriptionDetailPage';
+import { SubscriptionsPage } from './pages/subscriptions/SubscriptionsPage';
 
 export function App() {
   return (
@@ -32,6 +36,38 @@ export function App() {
             <Route element={<RequireAuth />}>
               <Route path="/app" element={<AppShell />}>
                 <Route index element={<DashboardPage />} />
+                <Route
+                  path="subscriptions"
+                  element={
+                    <RequireRole roles={['ADMIN', 'STAFF']}>
+                      <SubscriptionsPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="subscriptions/:id"
+                  element={
+                    <RequireRole roles={['ADMIN', 'STAFF']}>
+                      <SubscriptionDetailPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="quotations"
+                  element={
+                    <RequireRole roles={['ADMIN', 'STAFF']}>
+                      <QuotationsPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="payment-terms"
+                  element={
+                    <RequireRole roles={['ADMIN', 'STAFF']}>
+                      <PaymentTermsPage />
+                    </RequireRole>
+                  }
+                />
                 <Route path="catalog" element={<CatalogPage />} />
                 <Route
                   path="products"
