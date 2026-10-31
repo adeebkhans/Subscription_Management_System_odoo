@@ -10,6 +10,7 @@ import { SignupPage } from './pages/auth/SignupPage';
 import { CatalogPage } from './pages/catalog/CatalogPage';
 import { DashboardPage } from './pages/dashboard/DashboardPage';
 import { DiscountsPage } from './pages/discounts/DiscountsPage';
+import { FinanceReportsPage } from './pages/reports/FinanceReportsPage';
 import { ForbiddenPage } from './pages/ForbiddenPage';
 import { InvoicesPage } from './pages/invoices/InvoicesPage';
 import { NotFoundPage } from './pages/NotFoundPage';
@@ -76,6 +77,14 @@ export function App() {
                   element={
                     <RequireRole roles={['ADMIN', 'STAFF']}>
                       <InvoicesPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="reports"
+                  element={
+                    <RequireRole roles={['ADMIN', 'STAFF']}>
+                      <FinanceReportsPage />
                     </RequireRole>
                   }
                 />

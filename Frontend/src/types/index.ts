@@ -363,6 +363,39 @@ export interface InvoiceListParams {
   dueDateTo?: string;
 }
 
+export interface FinanceReportParams {
+  from?: string;
+  to?: string;
+  asOf?: string;
+  customerId?: string;
+  planId?: string;
+  status?: InvoiceStatus;
+}
+
+export interface FinanceReport {
+  asOf: string;
+  filters: {
+    from: string | null;
+    to: string | null;
+    customerId: string | null;
+    planId: string | null;
+    status: InvoiceStatus | null;
+  };
+  activeSubscriptions: number;
+  collectedRevenue: number;
+  outstandingRevenue: number;
+  outstandingInvoiceCount: number;
+  overdueInvoices: number;
+  overdueAmount: number;
+}
+
+export interface OverdueInvoiceParams extends Omit<FinanceReportParams, 'status'> {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  status?: 'CONFIRMED' | 'PAID';
+}
+
 export interface PaginationMeta {
   page: number;
   pageSize: number;

@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 import type { AuthenticatedRequest } from '../../middleware/auth.middleware.js';
+import { env } from '../../config/env.js';
 import {
   authenticate,
   currentUser,
@@ -12,10 +13,16 @@ import {
 } from './auth.services.js';
 import type { SessionResult } from './auth.types.js';
 
+const sessionCookieOptions = {
+  httpOnly: true,
+  secure: env.NODE_ENV === 'production',
+  sameSite: 'lax' as const,
+  path: '/'
+};
+
 function writeSessionCookies(response: Response, session: SessionResult) {
-  const options = { httpOnly: true, sameSite: 'lax' as const, path: '/' };
-  response.cookie('accessToken', session.accessToken, options);
-  response.cookie('refreshToken', session.refreshToken, options);
+  response.cookie('accessToken', session.accessToken, sessionCookieOptions);
+  response.cookie('refreshToken', session.refreshToken, sessionCookieOptions);
 }
 
 export async function signup(request: Request, response: Response, next: NextFunction) {
@@ -72,9 +79,8 @@ export async function logout(request: Request, response: Response, next: NextFun
   } catch (error) {
     return next(error);
   }
-  const options = { path: '/' };
-  response.clearCookie('accessToken', options);
-  response.clearCookie('refreshToken', options);
+  response.clearCookie('accessToken', sessionCookieOptions);
+  response.clearCookie('refreshToken', sessionCookieOptions);
   response.status(204).send();
 }
 
