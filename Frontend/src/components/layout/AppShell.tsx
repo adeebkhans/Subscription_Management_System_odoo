@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
+  CalendarClock,
   ChevronDown,
   Compass,
+  CreditCard,
+  FileText,
   Layers,
   LayoutDashboard,
   LogOut,
@@ -28,6 +31,9 @@ interface NavItem {
 const NAV_ITEMS: Record<Role, NavItem[]> = {
   ADMIN: [
     { to: '/app', label: 'Dashboard', icon: LayoutDashboard, end: true },
+    { to: '/app/subscriptions', label: 'Subscriptions', icon: CalendarClock },
+    { to: '/app/quotations', label: 'Quotations', icon: FileText },
+    { to: '/app/payment-terms', label: 'Payment terms', icon: CreditCard },
     { to: '/app/catalog', label: 'Catalog', icon: Compass },
     { to: '/app/products', label: 'Products', icon: Package },
     { to: '/app/plans', label: 'Plans', icon: Layers },
@@ -35,6 +41,9 @@ const NAV_ITEMS: Record<Role, NavItem[]> = {
   ],
   STAFF: [
     { to: '/app', label: 'Dashboard', icon: LayoutDashboard, end: true },
+    { to: '/app/subscriptions', label: 'Subscriptions', icon: CalendarClock },
+    { to: '/app/quotations', label: 'Quotations', icon: FileText },
+    { to: '/app/payment-terms', label: 'Payment terms', icon: CreditCard },
     { to: '/app/catalog', label: 'Catalog', icon: Compass },
     { to: '/app/products', label: 'Products', icon: Package },
     { to: '/app/plans', label: 'Plans', icon: Layers }
@@ -128,8 +137,8 @@ export function AppShell() {
 
         <div className="sidebar-foot">
           <div className="sidebar-phase">
-            <span>Phase 1</span>
-            <p>Foundation, roles, and master data</p>
+            <span>Phase 2</span>
+            <p>Subscriptions, quotations, and billing rules</p>
           </div>
         </div>
       </aside>
