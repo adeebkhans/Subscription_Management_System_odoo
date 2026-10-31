@@ -181,6 +181,183 @@ export const planFormSchema = z
     }
   });
 
+function optionalId() {
+  return z.preprocess(
+    (value) => (value === '' || value === null || value === undefined ? undefined : value),
+    z.string().optional()
+  );
+}
+
+function optionalAmount(label: string) {
+  return z.preprocess(
+    (value) => {
+      if (value === '' || value === null || value === undefined) return undefined;
+      return typeof value === 'string' ? Number(value) : value;
+    },
+    z
+      .number({ error: `Enter a valid ${label}` })
+      .nonnegative(`${label} cannot be negative`)
+      .optional()
+  );
+}
+
+function wholeNumber(label: string, minimum: number, maximum?: number) {
+  return z.preprocess(
+    (value) => {
+      if (value === '' || value === null || value === undefined) return undefined;
+      return typeof value === 'string' ? Number(value) : value;
+    },
+    z
+      .number({ error: `${label} is required` })
+      .int('Use a whole number')
+      .min(minimum, `${label} must be at least ${minimum}`)
+      .max(maximum ?? Number.MAX_SAFE_INTEGER, `${label} must be ${maximum} or less`)
+  );
+}
+
+const taxRate = z.preprocess(
+  (value) => {
+    if (value === '' || value === null || value === undefined) return 0;
+    return typeof value === 'string' ? Number(value) : value;
+  },
+  z
+    .number({ error: 'Enter a valid tax rate' })
+    .min(0, 'Tax rate cannot be negative')
+    .max(100, 'Tax rate cannot exceed 100')
+);
+
+const lineQuantity = wholeNumber('Quantity', 1);
+
+export const paymentTermFormSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(2, 'Payment term name must be at least 2 characters')
+    .max(120, 'Payment term name must be 120 characters or fewer'),
+  dueDays: wholeNumber('Due days', 0, 365),
+  isActive: z.boolean()
+});
+
+const quotationLineFormSchema = z.object({
+  productId: z.string().min(1, 'Select a product'),
+  variantId: optionalId(),
+  quantity: lineQuantity,
+  unitPrice: optionalAmount('unit price'),
+  taxRate
+});
+
+export const quotationFormSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(2, 'Quotation name must be at least 2 characters')
+    .max(120, 'Quotation name must be 120 characters or fewer'),
+  description: z.string().max(4000, 'Description must be 4,000 characters or fewer').optional(),
+  validityDays: wholeNumber('Validity days', 1, 365),
+  planId: optionalId(),
+  isActive: z.boolean(),
+  lines: z.array(quotationLineFormSchema).min(1, 'Add at least one product line')
+});
+
+const subscriptionLineFormSchema = z.object({
+  productId: z.string().min(1, 'Select a product'),
+  variantId: optionalId(),
+  description: z.string().max(500, 'Description must be 500 characters or fewer').optional(),
+  quantity: lineQuantity,
+  unitPrice: optionalAmount('unit price'),
+  taxRate
+});
+
+function dateRangeIssues(
+  data: { startDate?: string; expiryDate?: string },
+  context: z.RefinementCtx
+) {
+  const start = data.startDate ? new Date(data.startDate) : null;
+  const expiry = data.expiryDate ? new Date(data.expiryDate) : null;
+
+  if (start && Number.isNaN(start.getTime())) {
+    context.addIssue({
+      code: 'custom',
+      message: 'Enter a valid start date',
+      path: ['startDate']
+    });
+  }
+  if (expiry && Number.isNaN(expiry.getTime())) {
+    context.addIssue({
+      code: 'custom',
+      message: 'Enter a valid expiry date',
+      path: ['expiryDate']
+    });
+  }
+  if (start && expiry && !Number.isNaN(start.getTime()) && !Number.isNaN(expiry.getTime())) {
+    if (expiry < start) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Expiry date cannot be before the start date',
+        path: ['expiryDate']
+      });
+    }
+  }
+}
+
+export const subscriptionFormSchema = z
+  .object({
+    customerId: z.string().min(1, 'Select a customer'),
+    source: z.enum(['PLAN', 'TEMPLATE']),
+    planId: optionalId(),
+    quotationTemplateId: optionalId(),
+    startDate: z.string().min(1, 'Start date is required'),
+    expiryDate: z.string().optional(),
+    paymentTermId: optionalId(),
+    notes: z.string().max(4000, 'Notes must be 4,000 characters or fewer').optional(),
+    lines: z.array(subscriptionLineFormSchema).default([])
+  })
+  .superRefine((data, context) => {
+    if (data.source === 'PLAN' && !data.planId) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Select a plan',
+        path: ['planId']
+      });
+    }
+    if (data.source === 'TEMPLATE' && !data.quotationTemplateId) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Select a quotation template',
+        path: ['quotationTemplateId']
+      });
+    }
+    if (data.source === 'PLAN' && data.lines.length === 0) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Add at least one product line',
+        path: ['lines']
+      });
+    }
+    dateRangeIssues(data, context);
+  });
+
+export const subscriptionEditFormSchema = z
+  .object({
+    startDate: z.string().min(1, 'Start date is required'),
+    expiryDate: z.string().optional(),
+    paymentTermId: optionalId(),
+    notes: z.string().max(4000, 'Notes must be 4,000 characters or fewer').optional(),
+    lines: z.array(subscriptionLineFormSchema).min(1, 'Add at least one product line')
+  })
+  .superRefine((data, context) => dateRangeIssues(data, context));
+
+export const subscriptionRenewFormSchema = z
+  .object({
+    startDate: z.string().optional(),
+    expiryDate: z.string().optional()
+  })
+  .superRefine((data, context) => dateRangeIssues(data, context));
+
+export const cancelSubscriptionFormSchema = z.object({
+  reason: z.string().max(500, 'Reason must be 500 characters or fewer').optional()
+});
+
 export const passwordChecks = [
   { label: 'At least 9 characters', test: (value: string) => value.length >= 9 },
   { label: 'One lowercase letter', test: (value: string) => /[a-z]/.test(value) },

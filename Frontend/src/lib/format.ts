@@ -1,4 +1,10 @@
-import type { BillingFrequency, ProductType, Role } from '../types';
+import type {
+  BillingFrequency,
+  ProductType,
+  Role,
+  SubscriptionAction,
+  SubscriptionStatus
+} from '../types';
 
 const moneyFormatter = new Intl.NumberFormat(undefined, {
   minimumFractionDigits: 2,
@@ -48,6 +54,18 @@ export function fromDateTimeLocal(value: string): string | null {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return null;
   return date.toISOString();
+}
+
+export function toDateInput(value: string | Date | null | undefined): string {
+  if (!value) return '';
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const pad = (part: number) => String(part).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+export function todayInput(): string {
+  return toDateInput(new Date());
 }
 
 export function initials(name: string): string {
@@ -106,4 +124,30 @@ export function availabilityLabel(
   if (availableFrom) return `From ${formatDate(availableFrom)}`;
   if (availableUntil) return `Until ${formatDate(availableUntil)}`;
   return 'Always available';
+}
+
+export function subscriptionStatusLabel(status: SubscriptionStatus): string {
+  if (status === 'DRAFT') return 'Draft';
+  if (status === 'QUOTATION') return 'Quotation';
+  if (status === 'CONFIRMED') return 'Confirmed';
+  if (status === 'ACTIVE') return 'Active';
+  if (status === 'PAUSED') return 'Paused';
+  if (status === 'CLOSED') return 'Closed';
+  return 'Cancelled';
+}
+
+export function subscriptionActionLabel(action: SubscriptionAction): string {
+  if (action === 'SUBMIT') return 'Submit quotation';
+  if (action === 'CONFIRM') return 'Confirm';
+  if (action === 'ACTIVATE') return 'Activate';
+  if (action === 'PAUSE') return 'Pause';
+  if (action === 'RESUME') return 'Resume';
+  if (action === 'CLOSE') return 'Close';
+  return 'Cancel';
+}
+
+export function paymentTermDueLabel(dueDays: number): string {
+  if (dueDays === 0) return 'Due immediately';
+  if (dueDays === 1) return 'Net 1 day';
+  return `Net ${dueDays} days`;
 }

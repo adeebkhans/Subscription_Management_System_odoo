@@ -1,15 +1,27 @@
 import type {
   AuthResponse,
   LoginInput,
+  PaymentTerm,
+  PaymentTermInput,
+  PaymentTermUpdateInput,
   Plan,
   PlanInput,
   PlanUpdateInput,
   Product,
   ProductInput,
   ProductUpdateInput,
+  QuotationInput,
+  QuotationTemplate,
+  QuotationUpdateInput,
   ResetPasswordInput,
   SignupInput,
   StaffInput,
+  Subscription,
+  SubscriptionAction,
+  SubscriptionInput,
+  SubscriptionListParams,
+  SubscriptionRenewInput,
+  SubscriptionUpdateInput,
   User
 } from '../types';
 
@@ -165,6 +177,10 @@ export const api = {
       request<unknown>(`/users${listQuery(firstPage)}`).then((payload) =>
         extractItems<User>(payload)
       ),
+    listCustomers: () =>
+      request<unknown>(
+        `/users${listQuery({ ...firstPage, role: 'CUSTOMER', isActive: true })}`
+      ).then((payload) => extractItems<User>(payload)),
     create: (input: StaffInput) =>
       request<User>('/users', { method: 'POST', body: jsonBody(input) })
   },
@@ -194,5 +210,68 @@ export const api = {
         body: jsonBody(input)
       }),
     deletePlan: (id: string) => request<void>(`/catalog/plans/${id}`, { method: 'DELETE' })
+  },
+  paymentTerms: {
+    list: (params: { search?: string; isActive?: boolean } = {}) =>
+      request<unknown>(`/payment-terms${listQuery({ ...firstPage, ...params })}`).then(
+        (payload) => extractItems<PaymentTerm>(payload)
+      ),
+    get: (id: string) => request<PaymentTerm>(`/payment-terms/${id}`),
+    create: (input: PaymentTermInput) =>
+      request<PaymentTerm>('/payment-terms', { method: 'POST', body: jsonBody(input) }),
+    update: (id: string, input: PaymentTermUpdateInput) =>
+      request<PaymentTerm>(`/payment-terms/${id}`, {
+        method: 'PATCH',
+        body: jsonBody(input)
+      }),
+    deactivate: (id: string) =>
+      request<void>(`/payment-terms/${id}`, { method: 'DELETE' })
+  },
+  quotations: {
+    list: (params: { search?: string; isActive?: boolean } = {}) =>
+      request<unknown>(`/quotations${listQuery({ ...firstPage, ...params })}`).then(
+        (payload) => extractItems<QuotationTemplate>(payload)
+      ),
+    get: (id: string) => request<QuotationTemplate>(`/quotations/${id}`),
+    create: (input: QuotationInput) =>
+      request<QuotationTemplate>('/quotations', { method: 'POST', body: jsonBody(input) }),
+    update: (id: string, input: QuotationUpdateInput) =>
+      request<QuotationTemplate>(`/quotations/${id}`, {
+        method: 'PATCH',
+        body: jsonBody(input)
+      }),
+    deactivate: (id: string) =>
+      request<void>(`/quotations/${id}`, { method: 'DELETE' })
+  },
+  subscriptions: {
+    list: (params: SubscriptionListParams = {}) =>
+      request<unknown>(`/subscriptions${listQuery({ ...firstPage, ...params })}`).then(
+        (payload) => extractItems<Subscription>(payload)
+      ),
+    get: (id: string) => request<Subscription>(`/subscriptions/${id}`),
+    create: (input: SubscriptionInput) =>
+      request<Subscription>('/subscriptions', {
+        method: 'POST',
+        body: jsonBody(input)
+      }),
+    update: (id: string, input: SubscriptionUpdateInput) =>
+      request<Subscription>(`/subscriptions/${id}`, {
+        method: 'PATCH',
+        body: jsonBody(input)
+      }),
+    transition: (id: string, action: SubscriptionAction, reason?: string) =>
+      request<Subscription>(`/subscriptions/${id}/transition`, {
+        method: 'POST',
+        body: jsonBody({ action, ...(reason ? { reason } : {}) })
+      }),
+    renew: (id: string, input: SubscriptionRenewInput) =>
+      request<Subscription>(`/subscriptions/${id}/renew`, {
+        method: 'POST',
+        body: jsonBody(input)
+      }),
+    autoClose: () =>
+      request<{ closedCount: number; closedIds: string[] }>('/subscriptions/auto-close', {
+        method: 'POST'
+      })
   }
 };
