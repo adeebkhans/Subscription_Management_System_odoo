@@ -1,5 +1,6 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Eye, Package, Pencil, Plus, Search, Trash2 } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import { Alert } from '../../components/ui/Alert';
 import { Badge, ProductTypeBadge } from '../../components/ui/Badge';
@@ -23,6 +24,8 @@ export function ProductsPage() {
   const { user } = useAuth();
   const toast = useToast();
   const canManage = user?.role === 'ADMIN';
+  const [searchParams] = useSearchParams();
+  const openedFromCatalog = useRef(false);
 
   const load = useCallback(() => api.catalog.listProducts(), []);
   const { data, loading, error, reload } = useAsync(load, [load]);
@@ -35,6 +38,13 @@ export function ProductsPage() {
   const [detail, setDetail] = useState<Product | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    if (canManage && searchParams.get('new') === '1' && !openedFromCatalog.current) {
+      openedFromCatalog.current = true;
+      openCreate();
+    }
+  }, [canManage, searchParams]);
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();

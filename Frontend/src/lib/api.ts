@@ -101,7 +101,7 @@ async function request<T>(path: string, init: RequestInit = {}, retry = true): P
     });
   } catch {
     throw new ApiError(
-      'Unable to reach the server. Check that the backend is running.',
+      'Unable to connect right now. Please try again.',
       0,
       'NETWORK_ERROR'
     );

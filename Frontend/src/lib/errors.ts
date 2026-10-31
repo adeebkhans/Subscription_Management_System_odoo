@@ -40,7 +40,7 @@ export function apiFieldErrors(error: unknown): FieldErrors {
 export function describeApiError(error: unknown): string {
   if (error instanceof ApiError) {
     if (error.code === 'NETWORK_ERROR') {
-      return 'The server is unreachable. Start the backend and try again.';
+      return 'Unable to connect right now. Please try again.';
     }
     if (error.code === 'VALIDATION_ERROR') {
       return 'Some fields need attention. Review the highlighted fields and try again.';

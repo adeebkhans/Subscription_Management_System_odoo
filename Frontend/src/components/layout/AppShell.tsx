@@ -143,13 +143,6 @@ export function AppShell() {
             </NavLink>
           ))}
         </nav>
-
-        <div className="sidebar-foot">
-          <div className="sidebar-phase">
-            <span>Phase 5</span>
-            <p>Finance reporting and operations</p>
-          </div>
-        </div>
       </aside>
 
       <div className="app-main">

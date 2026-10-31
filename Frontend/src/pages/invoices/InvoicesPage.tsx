@@ -451,7 +451,7 @@ function GenerateInvoiceModal({
       open={open}
       onClose={onClose}
       title="Generate invoice"
-      description="Create a draft invoice from an active subscription. Leave dates empty to use the backend defaults."
+      description="Create a draft invoice from an active subscription. Leave dates empty to use the standard billing dates."
       size="md"
       dismissible={!submitting}
       footer={
