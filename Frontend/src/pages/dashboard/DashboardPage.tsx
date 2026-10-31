@@ -34,6 +34,8 @@ interface DashboardData {
   products: Product[];
   plans: Plan[];
   users: User[];
+  customerSubscriptions: number;
+  customerInvoices: number;
 }
 
 export function DashboardPage() {
@@ -43,13 +45,25 @@ export function DashboardPage() {
   const isCustomer = role === 'CUSTOMER';
 
   const load = useCallback(async (): Promise<DashboardData> => {
-    const [products, plans, users] = await Promise.all([
+    const [products, plans, users, customerSubscriptions, customerInvoices] = await Promise.all([
       api.catalog.listProducts(),
       api.catalog.listPlans(),
-      isAdmin ? api.users.list() : Promise.resolve([] as User[])
+      isAdmin ? api.users.list() : Promise.resolve([] as User[]),
+      isCustomer
+        ? api.portal.subscriptions({ page: 1, pageSize: 1 })
+        : Promise.resolve({ items: [], pagination: { page: 1, pageSize: 1, total: 0, totalPages: 0 } }),
+      isCustomer
+        ? api.portal.invoices({ page: 1, pageSize: 1 })
+        : Promise.resolve({ items: [], pagination: { page: 1, pageSize: 1, total: 0, totalPages: 0 } })
     ]);
-    return { products, plans, users };
-  }, [isAdmin]);
+    return {
+      products,
+      plans,
+      users,
+      customerSubscriptions: customerSubscriptions.pagination?.total ?? customerSubscriptions.items.length,
+      customerInvoices: customerInvoices.pagination?.total ?? customerInvoices.items.length
+    };
+  }, [isAdmin, isCustomer]);
 
   const { data, loading, error, reload } = useAsync(load, [load]);
 
@@ -65,7 +79,7 @@ export function DashboardPage() {
         title={isCustomer ? 'Your subscription home' : 'Workspace overview'}
         description={
           isCustomer
-            ? 'Explore the catalog today. Your subscriptions and invoices will live here in the next phase.'
+            ? 'Review your agreements, invoices, payment history, and balances from your customer portal.'
             : 'A quick read on the foundation: people, products, and the plans that connect them.'
         }
         actions={
@@ -142,8 +156,8 @@ export function DashboardPage() {
             {isCustomer && (
               <StatCard
                 label="Subscriptions"
-                value="0"
-                hint="Phase 2"
+                value={data?.customerSubscriptions ?? 0}
+                hint={`${data?.customerInvoices ?? 0} invoices`}
                 icon={<CalendarClock size={20} />}
                 tone="primary"
               />
@@ -397,12 +411,16 @@ function CustomerOverview({ products, plans }: { products: Product[]; plans: Pla
 
       <section className="panel dashboard-span-2 customer-callout">
         <div>
-          <p className="page-eyebrow">Coming in Phase 2</p>
-          <h2>Your subscriptions, invoices, and payments</h2>
+          <p className="page-eyebrow">Your account</p>
+          <h2>Subscriptions, invoices, and payments</h2>
           <p>
-            This portal is ready for the next step. Soon you will be able to start a
-            subscription, pause or renew it, and track every invoice from here.
+            Review subscription details, invoice totals, applied discounts, recorded payments,
+            and any remaining balance. Contact your account representative for changes or support.
           </p>
+          <Link to="/app/portal" className="button button-primary">
+            <ArrowUpRight size={16} />
+            <span>Open your account</span>
+          </Link>
         </div>
         <div className="customer-callout-art" aria-hidden="true">
           <CalendarClock size={44} />

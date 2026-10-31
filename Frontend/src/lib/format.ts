@@ -1,5 +1,7 @@
 import type {
   BillingFrequency,
+  InvoiceAction,
+  InvoiceStatus,
   ProductType,
   Role,
   SubscriptionAction,
@@ -150,4 +152,18 @@ export function paymentTermDueLabel(dueDays: number): string {
   if (dueDays === 0) return 'Due immediately';
   if (dueDays === 1) return 'Net 1 day';
   return `Net ${dueDays} days`;
+}
+
+export function invoiceStatusLabel(status: InvoiceStatus): string {
+  if (status === 'DRAFT') return 'Draft';
+  if (status === 'CONFIRMED') return 'Confirmed';
+  if (status === 'PAID') return 'Paid';
+  return 'Cancelled';
+}
+
+export function invoiceActionLabel(action: InvoiceAction): string {
+  if (action === 'CONFIRM') return 'Confirm invoice';
+  if (action === 'CANCEL') return 'Cancel invoice';
+  if (action === 'SEND') return 'Mark as sent';
+  return 'Print invoice';
 }

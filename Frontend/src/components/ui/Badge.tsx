@@ -2,12 +2,14 @@ import type { ReactNode } from 'react';
 import { cx } from '../../lib/cx';
 import {
   frequencyLabel,
+  invoiceStatusLabel,
   productTypeLabel,
   roleLabel,
   subscriptionStatusLabel
 } from '../../lib/format';
 import type {
   BillingFrequency,
+  InvoiceStatus,
   ProductType,
   Role,
   SubscriptionStatus
@@ -59,4 +61,17 @@ export function SubscriptionStatusBadge({ status }: { status: SubscriptionStatus
               : 'neutral';
 
   return <Badge tone={tone}>{subscriptionStatusLabel(status)}</Badge>;
+}
+
+export function InvoiceStatusBadge({ status }: { status: InvoiceStatus }) {
+  const tone: BadgeTone =
+    status === 'PAID'
+      ? 'success'
+      : status === 'CONFIRMED'
+        ? 'primary'
+        : status === 'CANCELLED'
+          ? 'danger'
+          : 'neutral';
+
+  return <Badge tone={tone}>{invoiceStatusLabel(status)}</Badge>;
 }
