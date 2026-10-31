@@ -9,10 +9,13 @@ import { ResetPasswordPage } from './pages/auth/ResetPasswordPage';
 import { SignupPage } from './pages/auth/SignupPage';
 import { CatalogPage } from './pages/catalog/CatalogPage';
 import { DashboardPage } from './pages/dashboard/DashboardPage';
+import { DiscountsPage } from './pages/discounts/DiscountsPage';
 import { ForbiddenPage } from './pages/ForbiddenPage';
+import { InvoicesPage } from './pages/invoices/InvoicesPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { PaymentTermsPage } from './pages/payment-terms/PaymentTermsPage';
 import { PlansPage } from './pages/plans/PlansPage';
+import { CustomerPortalPage } from './pages/portal/CustomerPortalPage';
 import { ProductsPage } from './pages/products/ProductsPage';
 import { QuotationsPage } from './pages/quotations/QuotationsPage';
 import { StaffPage } from './pages/staff/StaffPage';
@@ -65,6 +68,30 @@ export function App() {
                   element={
                     <RequireRole roles={['ADMIN', 'STAFF']}>
                       <PaymentTermsPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="invoices"
+                  element={
+                    <RequireRole roles={['ADMIN', 'STAFF']}>
+                      <InvoicesPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="discounts"
+                  element={
+                    <RequireRole roles={['ADMIN']}>
+                      <DiscountsPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="portal"
+                  element={
+                    <RequireRole roles={['CUSTOMER']}>
+                      <CustomerPortalPage />
                     </RequireRole>
                   }
                 />

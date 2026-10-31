@@ -267,6 +267,200 @@ export interface Subscription {
   updatedAt?: string;
 }
 
+export type InvoiceStatus = 'DRAFT' | 'CONFIRMED' | 'PAID' | 'CANCELLED';
+
+export type PaymentMethod = 'CASH' | 'BANK_TRANSFER' | 'CARD' | 'OTHER';
+
+export type InvoiceAction = 'CONFIRM' | 'CANCEL' | 'SEND' | 'PRINT';
+
+export interface InvoiceLine {
+  id: string;
+  invoiceId: string;
+  productId?: string | null;
+  product?: { id: string; name: string } | null;
+  variantId?: string | null;
+  variant?: { id: string; attribute: string; value: string } | null;
+  description: string;
+  quantity: number;
+  unitPrice: number | string;
+  taxRate: number | string;
+  taxAmount: number | string;
+  lineAmount: number | string;
+  sortOrder: number;
+}
+
+export interface InvoicePayment {
+  id: string;
+  invoiceId: string;
+  amount: number | string;
+  method: PaymentMethod;
+  paidAt: string;
+  note?: string | null;
+  reference?: string | null;
+  createdById?: string | null;
+  createdAt: string;
+}
+
+export interface InvoiceDiscount {
+  id: string;
+  invoiceId: string;
+  discountRuleId?: string | null;
+  name: string;
+  type: 'FIXED' | 'PERCENTAGE';
+  scope: 'PRODUCT' | 'SUBSCRIPTION';
+  value: number | string;
+  amount: number | string;
+  createdAt: string;
+}
+
+export interface Invoice {
+  id: string;
+  number: string;
+  billingKey: string;
+  subscriptionId: string;
+  subscription: {
+    id: string;
+    number: string;
+    status: SubscriptionStatus;
+    plan: { id: string; name: string; frequency: BillingFrequency };
+  };
+  customerId: string;
+  customerName: string;
+  customerEmail: string;
+  customer: SubscriptionCustomer;
+  periodStart: string;
+  periodEnd: string;
+  issueDate: string;
+  dueDate: string;
+  status: InvoiceStatus;
+  subtotal: number | string;
+  taxTotal: number | string;
+  total: number | string;
+  amountPaid: number | string;
+  discountTotal: number | string;
+  balanceDue: number | string;
+  confirmedAt?: string | null;
+  paidAt?: string | null;
+  cancelledAt?: string | null;
+  cancellationReason?: string | null;
+  sentAt?: string | null;
+  printedAt?: string | null;
+  lines: InvoiceLine[];
+  discounts: InvoiceDiscount[];
+  payments: InvoicePayment[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface InvoiceListParams {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  status?: InvoiceStatus;
+  customerId?: string;
+  subscriptionId?: string;
+  dueDateFrom?: string;
+  dueDateTo?: string;
+}
+
+export interface PaginationMeta {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface PaginatedResult<T> {
+  items: T[];
+  pagination?: PaginationMeta;
+}
+
+export interface GenerateInvoiceInput {
+  subscriptionId: string;
+  periodStart?: string;
+  periodEnd?: string;
+  issueDate?: string;
+}
+
+export interface PaymentInput {
+  amount: number;
+  method: PaymentMethod;
+  paidAt?: string;
+  note?: string;
+  reference?: string;
+}
+
+export type DiscountType = 'FIXED' | 'PERCENTAGE';
+export type DiscountScope = 'PRODUCT' | 'SUBSCRIPTION';
+
+export interface DiscountRule {
+  id: string;
+  name: string;
+  description?: string | null;
+  type: DiscountType;
+  scope: DiscountScope;
+  value: number | string;
+  minPurchase: number | string;
+  minQuantity: number;
+  startsAt?: string | null;
+  endsAt?: string | null;
+  maxUsageCount?: number | null;
+  usageCount: number;
+  isActive: boolean;
+  productId?: string | null;
+  product?: { id: string; name: string; isActive: boolean } | null;
+  createdById?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DiscountRuleInput {
+  name: string;
+  description?: string;
+  type: DiscountType;
+  scope: DiscountScope;
+  value: number;
+  minPurchase: number;
+  minQuantity: number;
+  startsAt?: string;
+  endsAt?: string;
+  maxUsageCount?: number;
+  isActive: boolean;
+  productId?: string;
+}
+
+export type DiscountRuleUpdateInput = Omit<
+  Partial<DiscountRuleInput>,
+  'description' | 'startsAt' | 'endsAt' | 'maxUsageCount' | 'productId'
+> & {
+  description?: string | null;
+  startsAt?: string | null;
+  endsAt?: string | null;
+  maxUsageCount?: number | null;
+  productId?: string | null;
+};
+
+export interface DiscountRuleListParams {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  type?: DiscountType;
+  scope?: DiscountScope;
+  isActive?: boolean;
+}
+
+export interface PortalSubscriptionListParams {
+  page?: number;
+  pageSize?: number;
+  status?: SubscriptionStatus;
+}
+
+export interface PortalInvoiceListParams {
+  page?: number;
+  pageSize?: number;
+  status?: InvoiceStatus;
+}
+
 export interface SubscriptionLineInput {
   productId: string;
   variantId?: string;
