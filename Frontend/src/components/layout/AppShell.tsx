@@ -5,12 +5,14 @@ import {
   ChevronDown,
   Compass,
   CreditCard,
+  BadgePercent,
   FileText,
   Layers,
   LayoutDashboard,
   LogOut,
   Menu,
   Package,
+  ReceiptText,
   Users,
   X
 } from 'lucide-react';
@@ -34,22 +36,26 @@ const NAV_ITEMS: Record<Role, NavItem[]> = {
     { to: '/app/subscriptions', label: 'Subscriptions', icon: CalendarClock },
     { to: '/app/quotations', label: 'Quotations', icon: FileText },
     { to: '/app/payment-terms', label: 'Payment terms', icon: CreditCard },
+    { to: '/app/invoices', label: 'Invoices', icon: ReceiptText },
     { to: '/app/catalog', label: 'Catalog', icon: Compass },
     { to: '/app/products', label: 'Products', icon: Package },
     { to: '/app/plans', label: 'Plans', icon: Layers },
-    { to: '/app/users', label: 'Team & users', icon: Users }
+    { to: '/app/users', label: 'Team & users', icon: Users },
+    { to: '/app/discounts', label: 'Discounts', icon: BadgePercent }
   ],
   STAFF: [
     { to: '/app', label: 'Dashboard', icon: LayoutDashboard, end: true },
     { to: '/app/subscriptions', label: 'Subscriptions', icon: CalendarClock },
     { to: '/app/quotations', label: 'Quotations', icon: FileText },
     { to: '/app/payment-terms', label: 'Payment terms', icon: CreditCard },
+    { to: '/app/invoices', label: 'Invoices', icon: ReceiptText },
     { to: '/app/catalog', label: 'Catalog', icon: Compass },
     { to: '/app/products', label: 'Products', icon: Package },
     { to: '/app/plans', label: 'Plans', icon: Layers }
   ],
   CUSTOMER: [
     { to: '/app', label: 'Dashboard', icon: LayoutDashboard, end: true },
+    { to: '/app/portal', label: 'My account', icon: ReceiptText },
     { to: '/app/catalog', label: 'Catalog', icon: Compass }
   ]
 };
@@ -137,8 +143,8 @@ export function AppShell() {
 
         <div className="sidebar-foot">
           <div className="sidebar-phase">
-            <span>Phase 2</span>
-            <p>Subscriptions, quotations, and billing rules</p>
+            <span>Phase 4</span>
+            <p>Promotions and customer self-service</p>
           </div>
         </div>
       </aside>
