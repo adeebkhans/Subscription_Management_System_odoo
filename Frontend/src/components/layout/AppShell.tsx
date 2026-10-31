@@ -6,6 +6,7 @@ import {
   Compass,
   CreditCard,
   BadgePercent,
+  BarChart3,
   FileText,
   Layers,
   LayoutDashboard,
@@ -37,6 +38,7 @@ const NAV_ITEMS: Record<Role, NavItem[]> = {
     { to: '/app/quotations', label: 'Quotations', icon: FileText },
     { to: '/app/payment-terms', label: 'Payment terms', icon: CreditCard },
     { to: '/app/invoices', label: 'Invoices', icon: ReceiptText },
+    { to: '/app/reports', label: 'Finance reports', icon: BarChart3 },
     { to: '/app/catalog', label: 'Catalog', icon: Compass },
     { to: '/app/products', label: 'Products', icon: Package },
     { to: '/app/plans', label: 'Plans', icon: Layers },
@@ -49,6 +51,7 @@ const NAV_ITEMS: Record<Role, NavItem[]> = {
     { to: '/app/quotations', label: 'Quotations', icon: FileText },
     { to: '/app/payment-terms', label: 'Payment terms', icon: CreditCard },
     { to: '/app/invoices', label: 'Invoices', icon: ReceiptText },
+    { to: '/app/reports', label: 'Finance reports', icon: BarChart3 },
     { to: '/app/catalog', label: 'Catalog', icon: Compass },
     { to: '/app/products', label: 'Products', icon: Package },
     { to: '/app/plans', label: 'Plans', icon: Layers }
@@ -143,8 +146,8 @@ export function AppShell() {
 
         <div className="sidebar-foot">
           <div className="sidebar-phase">
-            <span>Phase 4</span>
-            <p>Promotions and customer self-service</p>
+            <span>Phase 5</span>
+            <p>Finance reporting and operations</p>
           </div>
         </div>
       </aside>
