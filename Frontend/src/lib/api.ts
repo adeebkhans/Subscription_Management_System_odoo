@@ -1,9 +1,21 @@
 import type {
   AuthResponse,
+  DiscountRule,
+  DiscountRuleInput,
+  DiscountRuleListParams,
+  DiscountRuleUpdateInput,
+  GenerateInvoiceInput,
+  Invoice,
+  InvoiceAction,
+  InvoiceListParams,
   LoginInput,
   PaymentTerm,
   PaymentTermInput,
   PaymentTermUpdateInput,
+  PaymentInput,
+  PaginatedResult,
+  PortalInvoiceListParams,
+  PortalSubscriptionListParams,
   Plan,
   PlanInput,
   PlanUpdateInput,
@@ -141,6 +153,20 @@ function extractItems<T>(payload: unknown): T[] {
   return [];
 }
 
+function extractPagination(payload: unknown): PaginatedResult<unknown>['pagination'] {
+  if (!isRecord(payload) || !isRecord(payload.pagination)) return undefined;
+  const { page, pageSize, total, totalPages } = payload.pagination;
+  if (
+    typeof page !== 'number' ||
+    typeof pageSize !== 'number' ||
+    typeof total !== 'number' ||
+    typeof totalPages !== 'number'
+  ) {
+    return undefined;
+  }
+  return { page, pageSize, total, totalPages };
+}
+
 function listQuery(params: Record<string, string | number | boolean | undefined>): string {
   const search = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
@@ -273,5 +299,67 @@ export const api = {
       request<{ closedCount: number; closedIds: string[] }>('/subscriptions/auto-close', {
         method: 'POST'
       })
+  },
+  invoices: {
+    list: (params: InvoiceListParams = {}) =>
+      request<unknown>(`/invoices${listQuery({ ...firstPage, ...params })}`).then((payload) => ({
+        items: extractItems<Invoice>(payload),
+        pagination: extractPagination(payload)
+      })),
+    get: (id: string) => request<Invoice>(`/invoices/${id}`),
+    generate: (input: GenerateInvoiceInput) =>
+      request<{ invoice: Invoice; created: boolean }>('/invoices/generate', {
+        method: 'POST',
+        body: jsonBody(input)
+      }),
+    billingRun: (asOf?: string) =>
+      request<{
+        asOf: string;
+        processedSubscriptions: number;
+        createdCount: number;
+        existingCount: number;
+        invoiceNumbers: string[];
+      }>('/invoices/billing-run', {
+        method: 'POST',
+        body: jsonBody(asOf ? { asOf } : {})
+      }),
+    action: (id: string, action: InvoiceAction, reason?: string) =>
+      request<Invoice>(`/invoices/${id}/action`, {
+        method: 'POST',
+        body: jsonBody({ action, ...(reason ? { reason } : {}) })
+      }),
+    addPayment: (id: string, input: PaymentInput) =>
+      request<Invoice>(`/invoices/${id}/payments`, {
+        method: 'POST',
+        body: jsonBody(input)
+      })
+  },
+  discounts: {
+    list: (params: DiscountRuleListParams = {}) =>
+      request<PaginatedResult<DiscountRule>>(
+        `/discounts${listQuery({ ...firstPage, ...params })}`
+      ),
+    get: (id: string) => request<DiscountRule>(`/discounts/${id}`),
+    create: (input: DiscountRuleInput) =>
+      request<DiscountRule>('/discounts', { method: 'POST', body: jsonBody(input) }),
+    update: (id: string, input: DiscountRuleUpdateInput) =>
+      request<DiscountRule>(`/discounts/${id}`, {
+        method: 'PATCH',
+        body: jsonBody(input)
+      }),
+    deactivate: (id: string) =>
+      request<void>(`/discounts/${id}`, { method: 'DELETE' })
+  },
+  portal: {
+    subscriptions: (params: PortalSubscriptionListParams = {}) =>
+      request<PaginatedResult<Subscription>>(
+        `/portal/subscriptions${listQuery({ ...firstPage, ...params })}`
+      ),
+    subscription: (id: string) => request<Subscription>(`/portal/subscriptions/${id}`),
+    invoices: (params: PortalInvoiceListParams = {}) =>
+      request<PaginatedResult<Invoice>>(
+        `/portal/invoices${listQuery({ ...firstPage, ...params })}`
+      ),
+    invoice: (id: string) => request<Invoice>(`/portal/invoices/${id}`)
   }
 };

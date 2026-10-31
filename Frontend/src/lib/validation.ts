@@ -358,6 +358,67 @@ export const cancelSubscriptionFormSchema = z.object({
   reason: z.string().max(500, 'Reason must be 500 characters or fewer').optional()
 });
 
+function discountNumber(label: string, minimum: number, integer = false) {
+  const numberSchema = z
+    .number({ error: `${label} is required` })
+    .min(minimum, `${label} must be ${minimum} or greater`)
+    .refine((value) => !integer || Number.isInteger(value), `${label} must be a whole number`);
+  return z.preprocess(
+    (value) => {
+      if (value === '' || value === null || value === undefined) return Number.NaN;
+      return typeof value === 'string' ? Number(value) : value;
+    },
+    numberSchema
+  );
+}
+
+function optionalDiscountCount() {
+  return z.preprocess(
+    (value) => {
+      if (value === '' || value === null || value === undefined) return undefined;
+      return typeof value === 'string' ? Number(value) : value;
+    },
+    z.number({ error: 'Maximum usage count must be a whole number' })
+      .int('Maximum usage count must be a whole number')
+      .positive('Maximum usage count must be greater than zero')
+      .optional()
+  );
+}
+
+export const discountRuleFormSchema = z
+  .object({
+    name: z.string().trim().min(2, 'Rule name must be at least 2 characters').max(120),
+    description: z.string().max(2000).optional(),
+    type: z.enum(['FIXED', 'PERCENTAGE']),
+    scope: z.enum(['PRODUCT', 'SUBSCRIPTION']),
+    value: discountNumber('Discount value', 0.01),
+    minPurchase: discountNumber('Minimum purchase', 0),
+    minQuantity: discountNumber('Minimum quantity', 0, true),
+    maxUsageCount: optionalDiscountCount(),
+    startsAt: z.string().optional(),
+    endsAt: z.string().optional(),
+    productId: z.string().optional()
+  })
+  .superRefine((data, context) => {
+    const starts = data.startsAt ? new Date(data.startsAt) : null;
+    const ends = data.endsAt ? new Date(data.endsAt) : null;
+    if (starts && Number.isNaN(starts.getTime())) {
+      context.addIssue({ code: 'custom', message: 'Enter a valid start date', path: ['startsAt'] });
+    }
+    if (ends && Number.isNaN(ends.getTime())) {
+      context.addIssue({ code: 'custom', message: 'Enter a valid end date', path: ['endsAt'] });
+    }
+    if (starts && ends && !Number.isNaN(starts.getTime()) && !Number.isNaN(ends.getTime()) && ends < starts) {
+      context.addIssue({ code: 'custom', message: 'End date cannot be before start date', path: ['endsAt'] });
+    }
+    if (data.type === 'PERCENTAGE' && data.value > 100) {
+      context.addIssue({ code: 'custom', message: 'Percentage cannot exceed 100', path: ['value'] });
+    }
+    if (data.scope === 'PRODUCT' && !data.productId) {
+      context.addIssue({ code: 'custom', message: 'Select a target product', path: ['productId'] });
+    }
+  });
+
 export const passwordChecks = [
   { label: 'At least 9 characters', test: (value: string) => value.length >= 9 },
   { label: 'One lowercase letter', test: (value: string) => /[a-z]/.test(value) },
