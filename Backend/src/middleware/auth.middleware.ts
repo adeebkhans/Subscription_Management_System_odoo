@@ -5,7 +5,8 @@ import { verifyAccessToken, type TokenPayload } from '../core/auth/tokens.js';
 export type AuthenticatedRequest = Request & { auth?: TokenPayload };
 
 export function requireAuth(request: Request, _response: Response, next: NextFunction) {
-  const token = request.headers.authorization?.replace(/^Bearer\s+/i, '');
+  const headerToken = request.headers.authorization?.replace(/^Bearer\s+/i, '');
+  const token = headerToken ?? (request.cookies?.accessToken as string | undefined);
   if (!token) return next(new ApiError('Authentication required', 401, 'AUTH_REQUIRED'));
 
   try {

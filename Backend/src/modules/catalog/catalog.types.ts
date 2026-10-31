@@ -6,7 +6,13 @@ export type ProductInput = {
   salesPrice: number;
   costPrice: number;
   notes?: string;
-  variants: Array<{ attribute: string; value: string; extraPrice: number }>;
+  isActive: boolean;
+  variants: Array<{ attribute: string; value: string; extraPrice: number; isActive: boolean }>;
+};
+
+export type ProductUpdateInput = Partial<Omit<ProductInput, 'variants'>> & {
+  notes?: string | null;
+  variants?: ProductInput['variants'];
 };
 
 export type PlanInput = {
@@ -20,4 +26,10 @@ export type PlanInput = {
   allowEarlyClose: boolean;
   allowPause: boolean;
   allowRenew: boolean;
+  isActive: boolean;
+};
+
+export type PlanUpdateInput = Partial<Omit<PlanInput, 'availableFrom' | 'availableUntil'>> & {
+  availableFrom?: Date | null;
+  availableUntil?: Date | null;
 };

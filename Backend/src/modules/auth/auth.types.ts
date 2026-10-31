@@ -12,3 +12,17 @@ export type SessionResult = {
   accessToken: string;
   refreshToken: string;
 };
+
+export type PasswordResetRequestResult = {
+  message: string;
+  resetToken?: string;
+};
+
+export type PublicUser = {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  isActive: boolean;
+  createdAt: Date;
+};
