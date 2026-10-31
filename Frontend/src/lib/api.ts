@@ -4,6 +4,8 @@ import type {
   DiscountRuleInput,
   DiscountRuleListParams,
   DiscountRuleUpdateInput,
+  FinanceReport,
+  FinanceReportParams,
   GenerateInvoiceInput,
   Invoice,
   InvoiceAction,
@@ -14,6 +16,7 @@ import type {
   PaymentTermUpdateInput,
   PaymentInput,
   PaginatedResult,
+  OverdueInvoiceParams,
   PortalInvoiceListParams,
   PortalSubscriptionListParams,
   Plan,
@@ -224,9 +227,9 @@ export const api = {
       }),
     deleteProduct: (id: string) =>
       request<void>(`/catalog/products/${id}`, { method: 'DELETE' }),
-    listPlans: () =>
+    listPlans: (params: { isActive?: boolean } = { isActive: true }) =>
       request<unknown>(
-        `/catalog/plans${listQuery({ ...firstPage, isActive: true })}`
+        `/catalog/plans${listQuery({ ...firstPage, ...params })}`
       ).then((payload) => extractItems<Plan>(payload)),
     createPlan: (input: PlanInput) =>
       request<Plan>('/catalog/plans', { method: 'POST', body: jsonBody(input) }),
@@ -361,5 +364,13 @@ export const api = {
         `/portal/invoices${listQuery({ ...firstPage, ...params })}`
       ),
     invoice: (id: string) => request<Invoice>(`/portal/invoices/${id}`)
+  },
+  reports: {
+    finance: (params: FinanceReportParams = {}) =>
+      request<FinanceReport>(`/reports/finance${listQuery({ ...params })}`),
+    overdueInvoices: (params: OverdueInvoiceParams = {}) =>
+      request<PaginatedResult<Invoice>>(
+        `/reports/overdue-invoices${listQuery({ ...firstPage, ...params })}`
+      )
   }
 };
