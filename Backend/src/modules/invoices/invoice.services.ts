@@ -1,6 +1,11 @@
 import { Prisma, type BillingFrequency } from '@prisma/client';
 import { ApiError } from '../../core/errors/ApiError.js';
 import { paginationArgs, paginationResponse } from '../../core/http/pagination.js';
+import {
+  reserveDiscountUsage,
+  findEligibleDiscountRules
+} from '../discounts/discount.repository.js';
+import { selectBestDiscount, type DiscountApplication } from '../discounts/discount.calculator.js';
 import { priceLine, roundCurrency, summarizeLines } from '../subscriptions/pricing.js';
 import {
   createInvoiceWithNumber,
@@ -29,6 +34,8 @@ import {
 } from './invoice.validators.js';
 
 const dayMs = 24 * 60 * 60 * 1000;
+
+class DiscountReservationUnavailable extends Error {}
 
 function addFrequency(date: Date, frequency: BillingFrequency) {
   const next = new Date(date);
@@ -62,7 +69,7 @@ function billingKey(subscriptionId: string, periodStart: Date, periodEnd: Date) 
   return `${subscriptionId}:${periodStart.toISOString()}:${periodEnd.toISOString()}`;
 }
 
-function invoiceView(invoice: InvoiceWithRelations) {
+export function invoiceView(invoice: InvoiceWithRelations) {
   const balanceDue = roundCurrency(Math.max(0, Number(invoice.total) - Number(invoice.amountPaid)));
   return { ...invoice, balanceDue };
 }
@@ -122,38 +129,104 @@ async function createInvoiceForSubscription(
       taxRate: Number(line.taxRate)
     }))
   );
+  const discountRules = await findEligibleDiscountRules(
+    subscription.lines.map((line) => line.productId),
+    issueDate
+  );
+  const discountApplications = discountRules
+    .map((rule) => ({
+      id: rule.id,
+      name: rule.name,
+      type: rule.type,
+      scope: rule.scope,
+      value: Number(rule.value),
+      minPurchase: Number(rule.minPurchase),
+      minQuantity: rule.minQuantity,
+      productId: rule.productId,
+      maxUsageCount: rule.maxUsageCount,
+      usageCount: rule.usageCount
+    }))
+    .map((rule) =>
+      selectBestDiscount(
+        [rule],
+        subscription.lines.map((line) => ({
+          productId: line.productId,
+          quantity: line.quantity,
+          lineAmount: Number(line.lineAmount)
+        }))
+      )
+    )
+    .filter((application): application is DiscountApplication => application !== null)
+    .sort((left, right) => right.amount - left.amount);
 
-  try {
-    const invoice = await createInvoiceWithNumber(
-      (number) => ({
-        number,
-        billingKey: key,
-        subscription: { connect: { id: subscription.id } },
-        customer: { connect: { id: subscription.customerId } },
-        customerName: subscription.customer.name,
-        customerEmail: subscription.customer.email,
-        periodStart: period.periodStart,
-        periodEnd: period.periodEnd,
-        issueDate,
-        dueDate,
-        subtotal: new Prisma.Decimal(totals.subtotal),
-        taxTotal: new Prisma.Decimal(totals.taxTotal),
-        total: new Prisma.Decimal(totals.total),
-        createdBy: { connect: { id: actorId } },
-        lines: { create: lineRows }
-      }),
-      issueDate.getUTCFullYear()
-    );
-    return { invoice: invoiceView(invoice), created: true };
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-      const concurrent = await findInvoiceByBillingKey(key);
-      if (concurrent) {
-        return { invoice: invoiceView(concurrent), created: false };
+  const createInvoice = async (discount: DiscountApplication | null) => {
+    const discountTotal = discount?.amount ?? 0;
+    const total = roundCurrency(Math.max(0, totals.subtotal - discountTotal + totals.taxTotal));
+
+    try {
+      const invoice = await createInvoiceWithNumber(
+        (number) => ({
+          number,
+          billingKey: key,
+          subscription: { connect: { id: subscription.id } },
+          customer: { connect: { id: subscription.customerId } },
+          customerName: subscription.customer.name,
+          customerEmail: subscription.customer.email,
+          periodStart: period.periodStart,
+          periodEnd: period.periodEnd,
+          issueDate,
+          dueDate,
+          subtotal: new Prisma.Decimal(totals.subtotal),
+          taxTotal: new Prisma.Decimal(totals.taxTotal),
+          total: new Prisma.Decimal(total),
+          discountTotal: new Prisma.Decimal(discountTotal),
+          createdBy: { connect: { id: actorId } },
+          lines: { create: lineRows },
+          ...(discount
+            ? {
+                discounts: {
+                  create: {
+                    discountRule: { connect: { id: discount.rule.id } },
+                    name: discount.rule.name,
+                    type: discount.rule.type,
+                    scope: discount.rule.scope,
+                    value: new Prisma.Decimal(discount.rule.value),
+                    amount: new Prisma.Decimal(discount.amount)
+                  }
+                }
+              }
+            : {})
+        }),
+        issueDate.getUTCFullYear(),
+        discount
+          ? async (tx) => {
+              if (!(await reserveDiscountUsage(tx, discount.rule.id))) {
+                throw new DiscountReservationUnavailable();
+              }
+            }
+          : undefined
+      );
+      return { invoice: invoiceView(invoice), created: true };
+    } catch (error) {
+      if (error instanceof DiscountReservationUnavailable) {
+        return null;
       }
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        const concurrent = await findInvoiceByBillingKey(key);
+        if (concurrent) {
+          return { invoice: invoiceView(concurrent), created: false };
+        }
+      }
+      throw error;
     }
-    throw error;
+  };
+
+  for (const discount of discountApplications) {
+    const result = await createInvoice(discount);
+    if (result) return result;
   }
+
+  return createInvoice(null);
 }
 
 export async function getInvoices(input: unknown) {
@@ -226,6 +299,9 @@ export async function runBilling(input: unknown, actorId: string) {
         actorId,
         asOf
       );
+      if (!result) {
+        throw new ApiError('Could not reserve a discount for the invoice', 409, 'DISCOUNT_RESERVATION_FAILED');
+      }
       invoiceNumbers.push(result.invoice.number);
       if (result.created) createdCount += 1;
       else existingCount += 1;

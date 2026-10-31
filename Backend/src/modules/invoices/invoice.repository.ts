@@ -18,6 +18,7 @@ export const invoiceInclude = {
     },
     orderBy: { sortOrder: 'asc' as const }
   },
+  discounts: { orderBy: { createdAt: 'asc' as const } },
   payments: { orderBy: { paidAt: 'asc' as const } }
 } satisfies PrismaTypes.InvoiceInclude;
 
@@ -86,13 +87,17 @@ export function nextInvoiceNumber(tx: PrismaTypes.TransactionClient, year: numbe
 }
 
 export function createInvoiceWithNumber(
-  build: (number: string) => PrismaTypes.InvoiceCreateInput,
-  year: number
+  build: (number: string, tx: PrismaTypes.TransactionClient) => PrismaTypes.InvoiceCreateInput,
+  year: number,
+  beforeCreate?: (tx: PrismaTypes.TransactionClient) => Promise<void>
 ) {
   return database.$transaction(async (tx) => {
     const sequence = await nextInvoiceNumber(tx, year);
     const number = `INV-${year}-${String(sequence.value).padStart(6, '0')}`;
-    return tx.invoice.create({ data: build(number), include: invoiceInclude });
+    if (beforeCreate) {
+      await beforeCreate(tx);
+    }
+    return tx.invoice.create({ data: build(number, tx), include: invoiceInclude });
   });
 }
 
