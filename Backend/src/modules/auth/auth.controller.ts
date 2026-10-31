@@ -5,6 +5,8 @@ import {
   currentUser,
   refreshSession,
   registerCustomer,
+  revokeSession,
+  revokeSessionFromRefreshToken,
   requestPasswordReset,
   resetPassword
 } from './auth.services.js';
@@ -59,7 +61,17 @@ export async function me(request: Request, response: Response, next: NextFunctio
   }
 }
 
-export function logout(_request: Request, response: Response) {
+export async function logout(request: Request, response: Response, next: NextFunction) {
+  try {
+    const auth = (request as AuthenticatedRequest).auth;
+    if (auth) {
+      await revokeSession(auth.userId);
+    } else {
+      await revokeSessionFromRefreshToken(request.cookies?.refreshToken as string | undefined);
+    }
+  } catch (error) {
+    return next(error);
+  }
   const options = { path: '/' };
   response.clearCookie('accessToken', options);
   response.clearCookie('refreshToken', options);

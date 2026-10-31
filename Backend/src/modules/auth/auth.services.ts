@@ -12,6 +12,7 @@ import {
   findUserById,
   findUserByResetToken,
   markLogin,
+  revokeRefreshTokens,
   storeResetToken
 } from './auth.repository.js';
 import type { PasswordResetRequestResult, SessionResult } from './auth.types.js';
@@ -30,7 +31,7 @@ function toSession(user: User): SessionResult {
   return {
     user: { id: user.id, email: user.email, name: user.name, role: user.role },
     accessToken: issueAccessToken(payload),
-    refreshToken: issueRefreshToken(payload)
+    refreshToken: issueRefreshToken({ ...payload, tokenVersion: user.refreshTokenVersion })
   };
 }
 
@@ -115,8 +116,31 @@ export async function refreshSession(refreshToken?: string) {
   if (!user || !user.isActive) {
     throw new ApiError('Account is unavailable', 401, 'ACCOUNT_UNAVAILABLE');
   }
+  if (payload.tokenVersion !== user.refreshTokenVersion) {
+    throw new ApiError('Invalid or revoked refresh token', 401, 'INVALID_REFRESH_TOKEN');
+  }
 
   return toSession(user);
+}
+
+export async function revokeSession(userId: string) {
+  await revokeRefreshTokens(userId);
+}
+
+export async function revokeSessionFromRefreshToken(refreshToken?: string) {
+  if (!refreshToken) return;
+
+  let payload;
+  try {
+    payload = verifyRefreshToken(refreshToken);
+  } catch {
+    return;
+  }
+
+  const user = await findUserById(payload.userId);
+  if (user) {
+    await revokeSession(user.id);
+  }
 }
 
 export async function requestPasswordReset(input: unknown): Promise<PasswordResetRequestResult> {
