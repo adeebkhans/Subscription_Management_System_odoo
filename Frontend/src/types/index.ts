@@ -95,6 +95,8 @@ export interface StaffInput {
   role: 'ADMIN' | 'STAFF';
 }
 
+export type StaffUpdateInput = Pick<StaffInput, 'name' | 'email'>;
+
 export interface LoginInput {
   email: string;
   password: string;

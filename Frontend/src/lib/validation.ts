@@ -60,6 +60,11 @@ export const staffFormSchema = z.object({
   role: z.enum(['ADMIN', 'STAFF'])
 });
 
+export const staffUpdateFormSchema = staffFormSchema.pick({
+  name: true,
+  email: true
+});
+
 function requiredAmount(label: string) {
   return z.preprocess(
     (value) => {

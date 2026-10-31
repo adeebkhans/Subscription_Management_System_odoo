@@ -68,9 +68,6 @@ export function AuthLayout({ title, subtitle, children, footer }: AuthLayoutProp
           {children}
           {footer && <div className="auth-card-footer">{footer}</div>}
         </div>
-        <p className="auth-legal">
-          Phase 1 workspace · Authentication, roles, and core master data
-        </p>
       </main>
     </div>
   );

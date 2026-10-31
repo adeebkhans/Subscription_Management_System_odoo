@@ -4,8 +4,11 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  min-height: 40px;
+  padding: 0.65rem 1rem;
   border: 1px solid transparent;
   border-radius: 10px;
+  font-size: 0.88rem;
   font-weight: 600;
   line-height: 1;
   white-space: nowrap;
@@ -50,14 +53,14 @@
 }
 
 .button-primary {
-  background: linear-gradient(135deg, var(--primary), #6366f1);
+  background: var(--primary);
   color: #fff;
-  box-shadow: 0 8px 18px rgba(79, 70, 229, 0.22);
+  box-shadow: 0 2px 4px rgba(79, 70, 229, 0.16);
 }
 
 .button-primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, var(--primary-strong), #4f46e5);
-  box-shadow: 0 10px 22px rgba(79, 70, 229, 0.28);
+  background: var(--primary-strong);
+  box-shadow: 0 3px 7px rgba(79, 70, 229, 0.2);
 }
 
 .button-secondary {
@@ -96,7 +99,7 @@
 .button-danger {
   background: var(--danger);
   color: #fff;
-  box-shadow: 0 8px 18px rgba(220, 38, 38, 0.18);
+  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.16);
 }
 
 .button-danger:hover:not(:disabled) {
@@ -135,8 +138,9 @@
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-  padding: 0.2rem 0.55rem;
-  border-radius: 999px;
+  padding: 0.24rem 0.52rem;
+  border: 1px solid transparent;
+  border-radius: 7px;
   font-size: 0.72rem;
   font-weight: 600;
   line-height: 1.4;
@@ -145,36 +149,43 @@
 
 .badge-neutral {
   background: var(--surface-3);
+  border-color: var(--border);
   color: var(--text-soft);
 }
 
 .badge-primary {
   background: var(--primary-soft);
+  border-color: #c7d2fe;
   color: var(--primary-strong);
 }
 
 .badge-success {
   background: var(--success-soft);
+  border-color: #a7f3d0;
   color: #047857;
 }
 
 .badge-warning {
   background: var(--warning-soft);
+  border-color: #fde68a;
   color: var(--warning);
 }
 
 .badge-danger {
   background: var(--danger-soft);
+  border-color: #fecaca;
   color: var(--danger);
 }
 
 .badge-info {
   background: var(--info-soft);
+  border-color: #bfdbfe;
   color: var(--blue);
 }
 
 .badge-violet {
   background: var(--violet-soft);
+  border-color: #ddd6fe;
   color: var(--violet);
 }
 
@@ -192,7 +203,7 @@
   height: 36px;
   flex-shrink: 0;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--primary), #818cf8);
+  background: var(--primary);
   color: #fff;
   font-size: 0.78rem;
   font-weight: 700;
@@ -1026,8 +1037,11 @@
   padding: 0.8rem 0.9rem;
   border-left: 3px solid var(--primary);
   border-radius: 12px;
-  background: #0f172a;
-  color: #fff;
+  border-top: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
   box-shadow: var(--shadow-md);
   animation: slide-up 0.22s ease both;
 }
@@ -1047,15 +1061,15 @@
 .toast-icon {
   flex-shrink: 0;
   margin-top: 0.1rem;
-  color: #a5b4fc;
+  color: var(--primary);
 }
 
 .toast-success .toast-icon {
-  color: #6ee7b7;
+  color: var(--success);
 }
 
 .toast-error .toast-icon {
-  color: #fca5a5;
+  color: var(--danger);
 }
 
 .toast-copy {

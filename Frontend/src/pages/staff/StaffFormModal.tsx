@@ -8,8 +8,8 @@ import { PasswordChecklist } from '../../components/ui/PasswordChecklist';
 import { useFormState } from '../../hooks/useFormState';
 import { api } from '../../lib/api';
 import { apiFieldErrors, describeApiError, zodFieldErrors } from '../../lib/errors';
-import { staffFormSchema } from '../../lib/validation';
-import type { StaffInput } from '../../types';
+import { staffFormSchema, staffUpdateFormSchema } from '../../lib/validation';
+import type { StaffInput, User } from '../../types';
 
 interface StaffFormValues {
   name: string;
@@ -29,9 +29,10 @@ interface StaffFormModalProps {
   open: boolean;
   onClose: () => void;
   onSaved: (message: string) => void;
+  user?: User | null;
 }
 
-export function StaffFormModal({ open, onClose, onSaved }: StaffFormModalProps) {
+export function StaffFormModal({ open, onClose, onSaved, user = null }: StaffFormModalProps) {
   const {
     values,
     errors,
@@ -46,13 +47,19 @@ export function StaffFormModal({ open, onClose, onSaved }: StaffFormModalProps) 
 
   useEffect(() => {
     if (open) {
-      reset(initialValues);
+      reset(
+        user
+          ? { name: user.name, email: user.email, password: '', role: 'STAFF' }
+          : initialValues
+      );
     }
-  }, [open, reset]);
+  }, [open, reset, user]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const result = staffFormSchema.safeParse(values);
+    const result = user
+      ? staffUpdateFormSchema.safeParse({ name: values.name, email: values.email })
+      : staffFormSchema.safeParse(values);
     if (!result.success) {
       setErrors(zodFieldErrors(result.error));
       setFormError('Review the highlighted fields and try again.');
@@ -62,13 +69,33 @@ export function StaffFormModal({ open, onClose, onSaved }: StaffFormModalProps) 
     setSubmitting(true);
     setFormError(null);
     try {
-      await api.users.create({
-        name: result.data.name,
-        email: result.data.email,
-        password: result.data.password,
-        role: result.data.role
-      });
-      onSaved('Team account created');
+      if (user) {
+        const updateResult = staffUpdateFormSchema.safeParse({
+          name: values.name,
+          email: values.email
+        });
+        if (!updateResult.success) {
+          setErrors(zodFieldErrors(updateResult.error));
+          setFormError('Review the highlighted fields and try again.');
+          return;
+        }
+        await api.users.update(user.id, updateResult.data);
+        onSaved('Staff account updated');
+      } else {
+        const createResult = staffFormSchema.safeParse(values);
+        if (!createResult.success) {
+          setErrors(zodFieldErrors(createResult.error));
+          setFormError('Review the highlighted fields and try again.');
+          return;
+        }
+        await api.users.create({
+          name: createResult.data.name,
+          email: createResult.data.email,
+          password: createResult.data.password,
+          role: createResult.data.role
+        });
+        onSaved('Team account created');
+      }
       onClose();
     } catch (caught) {
       setErrors(apiFieldErrors(caught));
@@ -82,8 +109,12 @@ export function StaffFormModal({ open, onClose, onSaved }: StaffFormModalProps) 
     <Modal
       open={open}
       onClose={onClose}
-      title="Add a team member"
-      description="Create a staff or administrator account. Only administrators can do this."
+      title={user ? 'Edit staff member' : 'Add a team member'}
+      description={
+        user
+          ? 'Update the staff member’s name or email address.'
+          : 'Create a staff or administrator account. Only administrators can do this.'
+      }
       size="md"
       dismissible={!submitting}
       footer={
@@ -92,7 +123,7 @@ export function StaffFormModal({ open, onClose, onSaved }: StaffFormModalProps) 
             Cancel
           </Button>
           <Button type="submit" form="staff-form" loading={submitting}>
-            Create account
+            {user ? 'Save changes' : 'Create account'}
           </Button>
         </>
       }
@@ -125,34 +156,38 @@ export function StaffFormModal({ open, onClose, onSaved }: StaffFormModalProps) 
           />
         </div>
 
-        <Select
-          label="Role"
-          name="role"
-          value={values.role}
-          onChange={(event) =>
-            setValue('role', event.target.value as StaffInput['role'])
-          }
-          error={errors.role}
-          hint="Administrators have full access. Staff can manage plans and view products."
-          required
-        >
-          <option value="STAFF">Staff</option>
-          <option value="ADMIN">Administrator</option>
-        </Select>
+        {!user && (
+          <>
+            <Select
+              label="Role"
+              name="role"
+              value={values.role}
+              onChange={(event) =>
+                setValue('role', event.target.value as StaffInput['role'])
+              }
+              error={errors.role}
+              hint="Administrators have full access. Staff can manage plans and view products."
+              required
+            >
+              <option value="STAFF">Staff</option>
+              <option value="ADMIN">Administrator</option>
+            </Select>
 
-        <PasswordInput
-          label="Temporary password"
-          name="password"
-          autoComplete="new-password"
-          placeholder="Create a strong password"
-          value={values.password}
-          onChange={(event) => setValue('password', event.target.value)}
-          error={errors.password}
-          hint="Share this securely with the new team member."
-          required
-        />
+            <PasswordInput
+              label="Temporary password"
+              name="password"
+              autoComplete="new-password"
+              placeholder="Create a strong password"
+              value={values.password}
+              onChange={(event) => setValue('password', event.target.value)}
+              error={errors.password}
+              hint="Share this securely with the new team member."
+              required
+            />
 
-        <PasswordChecklist value={values.password} />
+            <PasswordChecklist value={values.password} />
+          </>
+        )}
       </form>
     </Modal>
   );

@@ -31,6 +31,7 @@ import type {
   ResetPasswordInput,
   SignupInput,
   StaffInput,
+  StaffUpdateInput,
   Subscription,
   SubscriptionAction,
   SubscriptionInput,
@@ -101,7 +102,7 @@ async function request<T>(path: string, init: RequestInit = {}, retry = true): P
     });
   } catch {
     throw new ApiError(
-      'Unable to reach the server. Check that the backend is running.',
+      'Unable to connect right now. Please try again.',
       0,
       'NETWORK_ERROR'
     );
@@ -211,7 +212,17 @@ export const api = {
         `/users${listQuery({ ...firstPage, role: 'CUSTOMER', isActive: true })}`
       ).then((payload) => extractItems<User>(payload)),
     create: (input: StaffInput) =>
-      request<User>('/users', { method: 'POST', body: jsonBody(input) })
+      request<User>('/users', { method: 'POST', body: jsonBody(input) }),
+    update: (id: string, input: StaffUpdateInput) =>
+      request<User>(`/users/${id}`, {
+        method: 'PATCH',
+        body: jsonBody(input)
+      }),
+    setActive: (id: string, isActive: boolean) =>
+      request<User>(`/users/${id}`, {
+        method: 'PATCH',
+        body: jsonBody({ isActive })
+      })
   },
   catalog: {
     listProducts: () =>
@@ -225,7 +236,7 @@ export const api = {
         method: 'PATCH',
         body: jsonBody(input)
       }),
-    deleteProduct: (id: string) =>
+    deactivateProduct: (id: string) =>
       request<void>(`/catalog/products/${id}`, { method: 'DELETE' }),
     listPlans: (params: { isActive?: boolean } = { isActive: true }) =>
       request<unknown>(

@@ -107,11 +107,6 @@ export function LoginPage() {
           Sign in
         </Button>
 
-        {import.meta.env.DEV && (
-          <p className="dev-hint">
-            Seeded admin: <code>admin@example.com</code> · <code>Admin@1234</code>
-          </p>
-        )}
       </form>
     </AuthLayout>
   );

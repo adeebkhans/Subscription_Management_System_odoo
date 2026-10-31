@@ -1,8 +1,9 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Plus, Search, ShieldCheck, UserRound, Users } from 'lucide-react';
+import { Pencil, Plus, Search, ShieldCheck, UserRound, UserX, Users } from 'lucide-react';
 import { Alert } from '../../components/ui/Alert';
 import { RoleBadge, StatusBadge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Spinner } from '../../components/ui/Spinner';
@@ -12,7 +13,7 @@ import { useAsync } from '../../hooks/useAsync';
 import { api } from '../../lib/api';
 import { describeApiError } from '../../lib/errors';
 import { formatDate, initials, roleLabel } from '../../lib/format';
-import type { Role } from '../../types';
+import type { Role, User } from '../../types';
 import { StaffFormModal } from './StaffFormModal';
 
 type RoleFilter = 'ALL' | Role;
@@ -26,6 +27,9 @@ export function StaffPage() {
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('ALL');
   const [formOpen, setFormOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [disableTarget, setDisableTarget] = useState<User | null>(null);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -49,6 +53,26 @@ export function StaffPage() {
     reload();
   }
 
+  function openCreate() {
+    setEditingUser(null);
+    setFormOpen(true);
+  }
+
+  async function handleDisable() {
+    if (!disableTarget) return;
+    setUpdatingStatus(true);
+    try {
+      await api.users.setActive(disableTarget.id, false);
+      toast.success('Staff account disabled', `${disableTarget.name} can no longer sign in.`);
+      setDisableTarget(null);
+      reload();
+    } catch (caught) {
+      toast.error('Could not disable staff account', describeApiError(caught));
+    } finally {
+      setUpdatingStatus(false);
+    }
+  }
+
   const hasUsers = users.length > 0;
   const hasFilters = search.trim().length > 0 || roleFilter !== 'ALL';
 
@@ -59,7 +83,7 @@ export function StaffPage() {
         title="Team & users"
         description="Create staff accounts and review every account in the workspace."
         actions={
-          <Button icon={<Plus size={16} />} onClick={() => setFormOpen(true)}>
+          <Button icon={<Plus size={16} />} onClick={openCreate}>
             Add team member
           </Button>
         }
@@ -143,7 +167,7 @@ export function StaffPage() {
           title="No accounts yet"
           description="Create the first staff account to start collaborating."
           action={
-            <Button icon={<Plus size={16} />} onClick={() => setFormOpen(true)}>
+            <Button icon={<Plus size={16} />} onClick={openCreate}>
               Add team member
             </Button>
           }
@@ -176,6 +200,7 @@ export function StaffPage() {
                 <th>Role</th>
                 <th>Status</th>
                 <th>Created</th>
+                <th aria-label="Actions" />
               </tr>
             </thead>
             <tbody>
@@ -197,6 +222,35 @@ export function StaffPage() {
                     <StatusBadge active={member.isActive ?? true} />
                   </td>
                   <td className="table-muted">{formatDate(member.createdAt)}</td>
+                  <td>
+                    {member.role === 'STAFF' && (
+                      <div className="table-actions">
+                        <button
+                          type="button"
+                          className="icon-button"
+                          onClick={() => {
+                            setEditingUser(member);
+                            setFormOpen(true);
+                          }}
+                          aria-label={`Edit ${member.name}`}
+                          title="Edit staff member"
+                        >
+                          <Pencil size={16} />
+                        </button>
+                        {(member.isActive ?? true) && (
+                          <button
+                            type="button"
+                            className="icon-button icon-button-danger"
+                            onClick={() => setDisableTarget(member)}
+                            aria-label={`Disable ${member.name}`}
+                            title="Disable staff member"
+                          >
+                            <UserX size={16} />
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -213,6 +267,18 @@ export function StaffPage() {
         open={formOpen}
         onClose={() => setFormOpen(false)}
         onSaved={handleSaved}
+        user={editingUser}
+      />
+      <ConfirmDialog
+        open={disableTarget !== null}
+        title="Disable staff account?"
+        message={`${disableTarget?.name ?? 'This staff member'} will no longer be able to sign in. Their existing records will be preserved.`}
+        confirmLabel="Disable account"
+        loading={updatingStatus}
+        onConfirm={() => void handleDisable()}
+        onClose={() => {
+          if (!updatingStatus) setDisableTarget(null);
+        }}
       />
     </div>
   );

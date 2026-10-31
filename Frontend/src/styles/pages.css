@@ -15,7 +15,7 @@
   gap: 1rem;
   padding: 1.25rem;
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius);
   background: var(--surface);
   box-shadow: var(--shadow-xs);
 }
@@ -279,7 +279,7 @@
   justify-content: space-between;
   gap: 1.5rem;
   border-color: #c7d2fe;
-  background: linear-gradient(135deg, #eef2ff, #f0fdfa);
+  background: var(--primary-soft);
 }
 
 .customer-callout h2 {
@@ -370,7 +370,7 @@
   gap: 0.55rem;
   padding: 1.25rem;
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius);
   background: var(--surface);
   box-shadow: var(--shadow-xs);
   transition:
@@ -469,40 +469,6 @@
   border-top: 1px solid var(--border);
   color: var(--muted);
   font-size: 0.74rem;
-}
-
-.catalog-note {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  padding: 1rem 1.25rem;
-  border: 1px solid #bfdbfe;
-  border-radius: 14px;
-  background: #eff6ff;
-  color: #1e40af;
-}
-
-.catalog-note-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  flex-shrink: 0;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.65);
-  color: var(--blue);
-}
-
-.catalog-note strong {
-  font-size: 0.85rem;
-}
-
-.catalog-note p {
-  margin-top: 0.15rem;
-  color: #1e3a8a;
-  font-size: 0.8rem;
-  line-height: 1.5;
 }
 
 /* Responsive page adjustments */

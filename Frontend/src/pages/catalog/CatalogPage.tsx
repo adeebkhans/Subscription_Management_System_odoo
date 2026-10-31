@@ -77,6 +77,7 @@ export function CatalogPage() {
   }
 
   const activeCount = tab === 'plans' ? filteredPlans.length : filteredProducts.length;
+  const isAdmin = user?.role === 'ADMIN';
 
   return (
     <div className="page-stack">
@@ -89,10 +90,39 @@ export function CatalogPage() {
             : 'See the customer-facing catalog exactly as it appears in the storefront.'
         }
         actions={
-          <Link to="/app" className="button button-secondary">
-            <Compass size={16} />
-            <span>Back to dashboard</span>
-          </Link>
+          <>
+            {user?.role === 'CUSTOMER' ? (
+              <Link to="/app/portal" className="button button-secondary">
+                <span>My account</span>
+              </Link>
+            ) : isAdmin ? (
+              <>
+                <Link to="/app/products?new=1" className="button button-secondary">
+                  <Package size={16} />
+                  <span>New product</span>
+                </Link>
+                <Link to="/app/plans?new=1" className="button button-primary">
+                  <Layers size={16} />
+                  <span>New plan</span>
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link to="/app/products" className="button button-secondary">
+                  <Package size={16} />
+                  <span>Products</span>
+                </Link>
+                <Link to="/app/plans" className="button button-secondary">
+                  <Layers size={16} />
+                  <span>Plans</span>
+                </Link>
+              </>
+            )}
+            <Link to="/app" className="button button-ghost">
+              <Compass size={16} />
+              <span>Dashboard</span>
+            </Link>
+          </>
         }
       />
 
@@ -177,25 +207,15 @@ export function CatalogPage() {
       ) : (
         <div className="catalog-grid">
           {filteredProducts.map((product) => (
-            <ProductCard key={product.id} product={product} />
+            <ProductCard
+              key={product.id}
+              product={product}
+              showCost={user?.role !== 'CUSTOMER'}
+            />
           ))}
         </div>
       )}
 
-      {user?.role === 'CUSTOMER' && (
-        <div className="catalog-note">
-          <span className="catalog-note-icon">
-            <Compass size={18} />
-          </span>
-          <div>
-            <strong>Subscriptions arrive in Phase 2</strong>
-            <p>
-              You will be able to start, pause, renew, and track subscriptions directly
-              from this portal.
-            </p>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -237,7 +257,7 @@ function PlanCard({ plan }: { plan: Plan }) {
   );
 }
 
-function ProductCard({ product }: { product: Product }) {
+function ProductCard({ product, showCost }: { product: Product; showCost: boolean }) {
   return (
     <article className="catalog-card">
       <div className="catalog-card-head">
@@ -266,7 +286,7 @@ function ProductCard({ product }: { product: Product }) {
       )}
       <div className="catalog-card-foot">
         <span>{product.variants.length} variants</span>
-        <span>Cost {formatMoney(product.costPrice)}</span>
+        {showCost && <span>Cost {formatMoney(product.costPrice)}</span>}
       </div>
     </article>
   );

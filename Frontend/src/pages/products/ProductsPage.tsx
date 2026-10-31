@@ -1,5 +1,6 @@
-import { useCallback, useMemo, useState } from 'react';
-import { Eye, Package, Pencil, Plus, Search, Trash2 } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Eye, Package, Pencil, Plus, Power, Search } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import { Alert } from '../../components/ui/Alert';
 import { Badge, ProductTypeBadge } from '../../components/ui/Badge';
@@ -23,6 +24,8 @@ export function ProductsPage() {
   const { user } = useAuth();
   const toast = useToast();
   const canManage = user?.role === 'ADMIN';
+  const [searchParams] = useSearchParams();
+  const openedFromCatalog = useRef(false);
 
   const load = useCallback(() => api.catalog.listProducts(), []);
   const { data, loading, error, reload } = useAsync(load, [load]);
@@ -33,8 +36,15 @@ export function ProductsPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
   const [detail, setDetail] = useState<Product | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
-  const [deleting, setDeleting] = useState(false);
+  const [deactivateTarget, setDeactivateTarget] = useState<Product | null>(null);
+  const [deactivating, setDeactivating] = useState(false);
+
+  useEffect(() => {
+    if (canManage && searchParams.get('new') === '1' && !openedFromCatalog.current) {
+      openedFromCatalog.current = true;
+      openCreate();
+    }
+  }, [canManage, searchParams]);
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -71,18 +81,21 @@ export function ProductsPage() {
     reload();
   }
 
-  async function handleDelete() {
-    if (!deleteTarget) return;
-    setDeleting(true);
+  async function handleDeactivate() {
+    if (!deactivateTarget) return;
+    setDeactivating(true);
     try {
-      await api.catalog.deleteProduct(deleteTarget.id);
-      toast.success('Product removed', `${deleteTarget.name} is no longer in the catalog.`);
-      setDeleteTarget(null);
+      await api.catalog.deactivateProduct(deactivateTarget.id);
+      toast.success(
+        'Product deactivated',
+        `${deactivateTarget.name} is no longer available in the active catalog.`
+      );
+      setDeactivateTarget(null);
       reload();
     } catch (caught) {
-      toast.error('Could not remove product', describeApiError(caught));
+      toast.error('Could not deactivate product', describeApiError(caught));
     } finally {
-      setDeleting(false);
+      setDeactivating(false);
     }
   }
 
@@ -252,11 +265,11 @@ export function ProductsPage() {
                           <button
                             type="button"
                             className="icon-button icon-button-danger"
-                            onClick={() => setDeleteTarget(product)}
-                            aria-label={`Delete ${product.name}`}
-                            title="Delete product"
+                            onClick={() => setDeactivateTarget(product)}
+                            aria-label={`Deactivate ${product.name}`}
+                            title="Deactivate product"
                           >
-                            <Trash2 size={16} />
+                            <Power size={16} />
                           </button>
                         </>
                       )}
@@ -287,18 +300,18 @@ export function ProductsPage() {
       />
 
       <ConfirmDialog
-        open={deleteTarget !== null}
-        title="Remove product?"
+        open={deactivateTarget !== null}
+        title="Deactivate product?"
         message={
-          deleteTarget
-            ? `“${deleteTarget.name}” will be removed from the active catalog. This cannot be undone from this screen.`
+          deactivateTarget
+            ? `“${deactivateTarget.name}” will be excluded from active catalog views. Existing subscriptions and records will be preserved.`
             : ''
         }
-        confirmLabel="Remove product"
-        loading={deleting}
-        onConfirm={handleDelete}
+        confirmLabel="Deactivate product"
+        loading={deactivating}
+        onConfirm={handleDeactivate}
         onClose={() => {
-          if (!deleting) setDeleteTarget(null);
+          if (!deactivating) setDeactivateTarget(null);
         }}
       />
     </div>
